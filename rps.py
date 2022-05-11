@@ -56,7 +56,7 @@ class RPS():  # r p s = 0 1 2
 }
 
         with open(self.path, 'w') as f:
-            json.dump(self.file, f, indent=4)
+            json.dump(self.file, f)
 
 
     def add_game(self, comp_in, player_in, outcome):
@@ -70,7 +70,7 @@ class RPS():  # r p s = 0 1 2
         rps['score'] += outcome
 
         with open(self.path, 'w') as f:
-            json.dump(self.file, f, indent=4)
+            json.dump(self.file, f)
 
 
     def get_score(self):
