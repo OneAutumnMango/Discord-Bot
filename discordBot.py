@@ -167,17 +167,22 @@ async def rps(ctx, arg: str = None):
     await ctx.send(f'Computer played {rpsNames[str(cin)]}\n{rpsOutKeys[str(pout)]}')
 
 
-@bot.command(help="Shows today's sunset time in UTC.")
+@bot.command(aliases=['s'], help="Shows today's sunset time in UTC.")
 async def sunset(ctx):
     await ctx.send(f'Sunset at {timestamp(Weather().sunset())}')
 
 
-@bot.command(help='Gets the current weather forecast.')
+@bot.command(aliases=['w'], help='Gets the current weather forecast.')
 async def weather(ctx):
     await ctx.send("**Weather Forecast:**\n" + Weather().weather_now())
 
+@bot.command(aliases=['w'], help='Gets the current DL tide prediction.')
+async def tide(ctx):
+    now = datetime.now(pytz.utc)
+    await ctx.send(f"`{predict_tide(now)[0]:.2f}m` @ {timestamp(now)}")
 
-@bot.command(help="Tide and weather around today's sunset.")
+
+@bot.command(aliases=['t'], help="Tide and weather around today's sunset.")
 async def ws(ctx):
     w = Weather()
     s = w.sunset().astimezone(pytz.utc)
