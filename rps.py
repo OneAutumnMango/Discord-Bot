@@ -3,8 +3,11 @@ import os
 import json
 
 
-def randomRPS():
+def randomRPS(player_in):
     return random.randint(0, 2)
+
+def cheaterRPS(player_in):
+    return (player_in + 1) % 3
 
 
 class RPS():  # r p s = 0 1 2
@@ -18,7 +21,7 @@ class RPS():  # r p s = 0 1 2
         self.generate_file()
     
     def play(self, player_in):
-        comp_in = self.AI()
+        comp_in = self.AI(player_in)
         outcome = self.get_outcome(comp_in, player_in)
         
         self.add_game(comp_in, player_in, outcome)
