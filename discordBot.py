@@ -10,18 +10,18 @@ import asyncio
 from rps import RPS
 from weather.weather import Weather
 from tides.tides import predict_tide, rebuild_model
+from astro import CelestialTracker
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 SERVER = os.getenv('SERVER')
 
 IRELAND_TZ = pytz.timezone("Europe/Dublin")
-TIDE_RECIPIENTS = ['287363454665359371']
+TIDE_RECIPIENTS = ['287363454665359371', '356458075302920202']
 TARGET_HOUR = 13
 
 intents = discord.Intents.default()
 intents.message_content = True
-# client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='-', intents=intents)
 
 rpsDict = {}
@@ -40,6 +40,80 @@ def timestamp(datetime):
 
 def datetimestamp(datetime):
     return f'<t:{int(datetime.timestamp())}>'
+
+def create_embed(title=None, colour=0x1E90FF, timestamp=datetime.now(pytz.utc)):
+    return discord.Embed(
+        title=title,
+        colour=colour,  # nice blue
+        timestamp=timestamp
+    )
+
+
+def moon_info(dt=None):
+    ct = CelestialTracker()
+    alt, az = ct.moon_at(dt)
+    _, perc = ct.moon_angular_diameter_pct(dt)
+    rise, set = ct.moon_rise_set()
+    rise_set_str = f'Rises @ {timestamp(rise)}' if alt <= 0 else f'Sets @ {timestamp(set)}'
+    return alt, az, perc, rise_set_str
+
+def create_ws_embed():
+    w = Weather()
+    s = w.sunset().astimezone(pytz.utc)
+    s1 = s - timedelta(hours=1)
+    s2 = s - timedelta(hours=2)
+    h = predict_tide(s)[0]
+    h1 = predict_tide(s1)[0]
+    h2 = predict_tide(s2)[0]
+
+    t, forecast = w.weather_at(s)
+    temp = forecast["temperature"]
+    temp_margin = forecast["temp_margin"]
+    feels_like = forecast["feels_like"]
+    weather_desc = forecast["weather"]
+    wind_speed = forecast["wind_speed"]
+    cloud_cover = forecast["cloud_cover"]
+
+    alt, az, perc, rise_set_str = moon_info(s)
+
+    embed = create_embed(title="🌅 Evening Tide, Weather & Moon Forecast")
+
+    embed.add_field(
+        name="🌊 Tide Forecast",
+        value=(
+            f"`{h2:.2f}` | {timestamp(s2)} m\n"
+            f"`{h1:.2f}` | {timestamp(s1)} m\n"
+            f"`{h:.2f}`  | {timestamp(s)}  m 🌅(sunset)"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name=f"🌤️ Dun Laoghaire Weather Forecast @ {timestamp(t)}",
+        value=(
+            f"Temperature: `{temp:.2f}±{temp_margin:.2f} °C` (feels like `{feels_like:.2f} °C`)\n"
+            f"Weather: `{weather_desc}`\n"
+            f"Wind Speed: `{wind_speed:.2f} m/s`\n"
+            f"Cloud Cover: `{cloud_cover}%`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name=f"🌙 Moon Info @ {timestamp(s)}",
+        value=(
+            f"Altitude: `{alt:.1f}°`\n"
+            f"Azimuth: `{az:.1f}°`\n"
+            f"%size of Avg.: `{perc:.1f}%`\n"
+            f"{rise_set_str}"
+        ),
+        inline=False
+    )
+
+    # embed.set_footer(text="Data provided by OpenWeatherAPI & Tide Prediction Algorithms")
+    # embed.set_thumbnail(url="https://i.imgur.com/3ZQ3ZzL.png")  # Example weather icon
+
+    return embed
 
 
 
@@ -63,27 +137,7 @@ async def send_daily_forecast():
             user = await bot.fetch_user(ids)
 
             try:
-                w = Weather()
-
-                s = w.sunset().astimezone(pytz.utc)
-                s1 = s - timedelta(hours=1)
-                s2 = s - timedelta(hours=2)
-                h = predict_tide(s)[0]
-                h1 = predict_tide(s1)[0]
-                h2 = predict_tide(s2)[0]
-
-                tide_msg = (
-                    "**Daily Tide Forecast:**\n"
-                    f"`{h2:.2f}m` @ {timestamp(s2)}\n"
-                    f"`{h1:.2f}m` @ {timestamp(s1)}\n"
-                    f"`{h:.2f}m` @ {timestamp(s)} (sunset)"
-                )
-
-                t, forecast = w.weather_at(s)
-                weather_msg = f"**Weather Forecast:** @ {timestamp(t)}\n" + forecast
-
-                await user.send(tide_msg)
-                await user.send(weather_msg)
+                await user.send(create_ws_embed())
 
             except Exception as e:
                 print(f"Error sending forecast: {e}")
@@ -171,39 +225,60 @@ async def rps(ctx, arg: str = None):
 async def sunset(ctx):
     await ctx.send(f'Sunset at {timestamp(Weather().sunset())}')
 
-
 @bot.command(aliases=['w'], help='Gets the current weather forecast.')
 async def weather(ctx):
-    await ctx.send("**Weather Forecast:**\n" + Weather().weather_now())
+    forecast = Weather().weather_now()
+    temp = forecast["temperature"]
+    temp_margin = forecast["temp_margin"]
+    feels_like = forecast["feels_like"]
+    weather_desc = forecast["weather"]
+    wind_speed = forecast["wind_speed"]
+    cloud_cover = forecast["cloud_cover"]
 
-@bot.command(aliases=['w'], help='Gets the current DL tide prediction.')
+    embed = create_embed(f"🌤️ Weather Forecast")
+    embed.add_field(
+        name=f"Dun Laoghaire",
+        value=(
+            f"Temperature: `{temp:.2f}±{temp_margin:.2f} °C` (feels like `{feels_like:.2f} °C`)\n"
+            f"Weather: `{weather_desc}`\n"
+            f"Wind Speed: `{wind_speed:.2f} m/s`\n"
+            f"Cloud Cover: `{cloud_cover}%`"
+        ),
+        inline=False
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(aliases=['t'], help='Gets the current DL tide prediction.')
 async def tide(ctx):
     now = datetime.now(pytz.utc)
     await ctx.send(f"`{predict_tide(now)[0]:.2f}m` @ {timestamp(now)}")
 
-
-@bot.command(aliases=['t'], help="Tide and weather around today's sunset.")
-async def ws(ctx):
-    w = Weather()
-    s = w.sunset().astimezone(pytz.utc)
-    s1 = s - timedelta(hours=1)
-    s2 = s - timedelta(hours=2)
-    h = predict_tide(s)[0]
-    h1 = predict_tide(s1)[0]
-    h2 = predict_tide(s2)[0]
-
-    tide_msg = (
-        "**DL Tide Forecast:**\n"
-        f"`{h2:.2f}m` @ {timestamp(s2)}\n"
-        f"`{h1:.2f}m` @ {timestamp(s1)}\n"
-        f"`{h:.2f}m` @ {timestamp(s)} (sunset)"
+@bot.command(help="Gets the altitude and azimuth (angle off north) of the Moon.")
+async def moon(ctx):
+    alt, az, perc, rise_set_str = moon_info()
+    # await ctx.send(f"Moon Alt: `{alt:.1f}°`, Az: `{az:.1f}°`, `{perc:.1f}%` of avg., {rise_set_str}")
+    embed = create_embed(f"🌙 Moon Info")
+    embed.add_field(
+        name=f"Details",
+        value=(
+            f"Altitude: `{alt:.1f}°`\n"
+            f"Azimuth: `{az:.1f}°`\n"
+            f"%size of Avg.: `{perc:.1f}%`\n"
+            f"{rise_set_str}"
+        ),
+        inline=False
     )
+    await ctx.send(embed=embed)
 
-    t, forecast = w.weather_at(s)
-    weather_msg = f"**Weather Forecast:** @ {timestamp(t)}\n" + forecast
+@bot.command(help="Gets the altitude and azimuth (angle off north) of the Sun.")
+async def sun(ctx):
+    alt, az = CelestialTracker().sun_at()
+    await ctx.send(f"Sun Alt: `{alt:.1f}°`, Az: `{az:.1f}°`")
 
-    await ctx.send(tide_msg)
-    await ctx.send(weather_msg)
+
+@bot.command(help="Tide and weather around today's sunset.")
+async def ws(ctx):
+    await ctx.send(embed=create_ws_embed())
 
 
 

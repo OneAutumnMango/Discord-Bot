@@ -13,7 +13,6 @@ OPENWEATHER_URL = "https://api.openweathermap.org/data/2.5/"
 IRELAND_TZ = pytz.timezone("Europe/Dublin")
 
 
-
 class Weather:
     def __init__(self):
         self.lat = 53.29395
@@ -80,14 +79,25 @@ class Weather:
         wind = closest_entry["wind"]["speed"]
         clouds = closest_entry["clouds"]["all"]
 
-        temp_str = f"{temp}±{(temp_max - temp_min):.1f}"
+        # temp_str = f"{temp}±{(temp_max - temp_min):.1f}"
 
-        return dt, (
-            f"Temperature: {temp_str} °C, fl. {feels_like} °C\n"
-            f"Weather: {desc}\n"
-            f"Wind Speed: {wind} m/s\n"
-            f"Cloud Cover: {clouds}%"
-        )
+        forecast_dict = {
+            "temperature": temp,
+            "temp_margin": temp_max - temp_min,
+            "feels_like": feels_like,
+            "weather": desc,
+            "wind_speed": wind,
+            "cloud_cover": clouds
+        }
+
+        return dt, forecast_dict
+
+        # return dt, (
+        #     f"Temperature: {temp_str} °C, fl. {feels_like} °C\n"
+        #     f"Weather: {desc}\n"
+        #     f"Wind Speed: {wind} m/s\n"
+        #     f"Cloud Cover: {clouds}%"
+        # )
     
     def weather_now(self):
         self._grab_weather()
@@ -102,12 +112,23 @@ class Weather:
 
         temp_str = f"{temp}±{(temp_max - temp_min):.1f}"
 
-        return (
-            f"Temperature: {temp_str} °C, fl. {feels_like} °C\n"
-            f"Weather: {desc}\n"
-            f"Wind Speed: {wind} m/s\n"
-            f"Cloud Cover: {clouds}%"
-        )
+        forecast_dict = {
+            "temperature": temp,
+            "temp_margin": temp_max - temp_min,
+            "feels_like": feels_like,
+            "weather": desc,
+            "wind_speed": wind,
+            "cloud_cover": clouds
+        }
+
+        return forecast_dict
+
+        # return (
+        #     f"Temperature: {temp_str} °C, fl. {feels_like} °C\n"
+        #     f"Weather: {desc}\n"
+        #     f"Wind Speed: {wind} m/s\n"
+        #     f"Cloud Cover: {clouds}%"
+        # )
 
     def _load_cached_weather(self):
         if os.path.exists(self._weather_cache_file):
@@ -128,8 +149,7 @@ class Weather:
     def sunset(self):
         if self._recent_weather is None: self._grab_weather()
         return datetime.fromtimestamp(self._recent_weather["sys"]["sunset"], tz=IRELAND_TZ)
-
-
+    
 
 # Run
 if __name__ == "__main__":
