@@ -1,3 +1,4 @@
+import math
 import os
 import discord
 from discord.ext import commands
@@ -41,11 +42,11 @@ def timestamp(datetime):
 def datetimestamp(datetime):
     return f'<t:{int(datetime.timestamp())}>'
 
-def create_embed(title=None, colour=0x1E90FF, timestamp=datetime.now(pytz.utc)):
+def create_embed(title=None, colour=0x1E90FF, timestamp=None):
     return discord.Embed(
         title=title,
         colour=colour,  # nice blue
-        timestamp=timestamp
+        timestamp=timestamp if timestamp is not None else datetime.now(pytz.utc)
     )
 
 
@@ -118,29 +119,35 @@ def create_ws_embed():
 
 
 # @asyncio.tasks.loop(hours=24)
-async def send_daily_forecast():
+async def send_daily_forecast(test=None):
     await bot.wait_until_ready()
 
     while not bot.is_closed():
-        now_utc = datetime.now(pytz.utc)
-        ireland_now = now_utc.astimezone(IRELAND_TZ)
-        target_time = IRELAND_TZ.localize(datetime.combine(ireland_now.date(), dt(hour=TARGET_HOUR)))
+        if not test:
+            now_utc = datetime.now(pytz.utc)
+            ireland_now = now_utc.astimezone(IRELAND_TZ)
+            target_time = IRELAND_TZ.localize(datetime.combine(ireland_now.date(), dt(hour=TARGET_HOUR)))
 
-        if ireland_now >= target_time:
-            target_time += timedelta(days=1)
+            if ireland_now >= target_time:
+                target_time += timedelta(days=1)
 
-        wait_seconds = (target_time - ireland_now).total_seconds()
+            wait_seconds = (target_time - ireland_now).total_seconds()
 
-        await asyncio.sleep(wait_seconds)
+            await asyncio.sleep(wait_seconds)
 
         for ids in TIDE_RECIPIENTS:
             user = await bot.fetch_user(ids)
 
+            if test:
+                await user.send("Manual Daily Message Test")
+
             try:
-                await user.send(create_ws_embed())
+                await user.send(embed=create_ws_embed())
 
             except Exception as e:
                 print(f"Error sending forecast: {e}")
+        
+        if test: return
 
 
 
@@ -188,6 +195,9 @@ async def on_message(message):
                 await message.channel.send(f'Success!')
             else: 
                 await message.channel.send(f'Failure!')
+
+        if msg.startswith('-wstest'):
+            await send_daily_forecast(test=True)
 
     await bot.process_commands(message)
 
@@ -280,6 +290,20 @@ async def sun(ctx):
 async def ws(ctx):
     await ctx.send(embed=create_ws_embed())
 
+@bot.command(aliases=['hori', 'h'], help="Calculates the distance to the horizon from a given height.")
+async def horizon(ctx, height: float):
+    if height < 0:
+        await ctx.send("Height must be non-negative.")
+        return
+
+    r = 6356752.3
+    # distance_m = math.sqrt((r+height)**2 - r**2)
+    distance_m = math.sqrt(2*r*height + height **2)
+    distance_km = distance_m/1000
+
+    await ctx.send(
+        f"At a height of `{height:.2f}m`, the horizon is approximately `{distance_km:.2f}km` away."
+    )
 
 
 bot.run(TOKEN)
