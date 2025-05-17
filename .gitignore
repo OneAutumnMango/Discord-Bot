@@ -1,10 +1,10 @@
-log.csv
 .venv/
 __pycache__
 .env
-log.csv
 nohup.out
 *.csv
 **/*.png
 weather/*.json
 /*.json
+de421.bsp
+*.pkl

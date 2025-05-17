@@ -16,8 +16,6 @@ A Python-powered Discord bot built for fun and functionality. Includes astronomy
    OPENWEATHERMAP=openweathermap_free_apikey
    ```
 
-> **Note:** This token should remain secret. Do not commit your `.env` file.
-
 3. Run the bot:
    ```bash
    python bot.py
