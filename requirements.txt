@@ -1,0 +1,8 @@
+discord.py
+python-dotenv
+pytz
+requests
+skyfield
+pandas
+numpy
+utide

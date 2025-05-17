@@ -1,7 +1,6 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from datetime import datetime, timedelta, timezone, date, time
+from datetime import datetime, timedelta, date, time
 import os
 import pickle
 from urllib.parse import quote
