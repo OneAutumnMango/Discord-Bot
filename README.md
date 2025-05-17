@@ -11,7 +11,9 @@ A Python-powered Discord bot built for fun and functionality. Includes astronomy
 
 2. Create a `.env` file in the root directory with your Discord bot token:
    ```env
-   DISCORD_TOKEN=your_token_here
+   TOKEN=your_discord_bot_token
+   SERVER=discord_server_name
+   OPENWEATHERMAP=openweathermap_free_apikey
    ```
 
 > **Note:** This token should remain secret. Do not commit your `.env` file.
