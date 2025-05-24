@@ -6,3 +6,5 @@ skyfield
 pandas
 numpy
 utide
+PyNaCl
+git+https://github.com/OneAutumnMango/Discord-Music-Core.git#egg=discord_music_core

@@ -12,6 +12,7 @@ from rps import RPS
 from weather.weather import Weather
 from tides.tides import predict_tide, rebuild_model
 from astro import CelestialTracker, SunArcTimer
+from discord_music_core.musicbot import MusicBot
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
@@ -49,6 +50,24 @@ def create_embed(title=None, colour=0x1E90FF, timestamp=None):
         colour=colour,  # nice blue
         timestamp=timestamp if timestamp is not None else datetime.now(pytz.utc)
     )
+
+async def join_vc(ctx):
+    if ctx.author.voice is None:
+        await ctx.send("You're not connected to a voice channel.")
+        return
+
+    channel = ctx.author.voice.channel
+
+    if ctx.voice_client is not None:
+        if ctx.voice_client.channel == channel:
+            return channel
+        await ctx.voice_client.move_to(channel)
+        await ctx.send(f"Moved to {channel.name}")
+    else:
+        await channel.connect()
+        await ctx.send(f"Joined {channel.name}")
+
+    return channel
 
 
 def moon_info(dt=None):
@@ -335,6 +354,101 @@ async def horizon(ctx, height: float):
 async def handtime(ctx):
     t, _ = SunArcTimer().minutes_per_hand_near_sunset()
     await ctx.send(f"`{t:.1f}` minutes per handwidth (`7.149°`)")
+
+# ============ Music =============
+@bot.command(help="Joins Music Channel")
+async def join(ctx):
+    await join_vc(ctx)
+
+@bot.command(help="Leaves the current voice channel")
+async def leave(ctx):
+    if ctx.voice_client is None:
+        await ctx.send("I'm not in a voice channel.")
+        return
+
+    await ctx.voice_client.disconnect()
+    await ctx.send("Disconnected from the voice channel.")
+
+@bot.command(help="Play a song from a YouTube URL")
+async def play(ctx, *, url: str):
+    await join_vc(ctx)
+
+    # Pass the current voice client to MusicBot if you haven't already
+    if not hasattr(ctx.bot, "musicbot"):
+        loop = asyncio.get_running_loop()
+        ctx.bot.musicbot = MusicBot(ctx.voice_client, loop)
+    else:
+        # Update voice client if changed
+        if ctx.bot.musicbot.voice_client != ctx.voice_client:
+            ctx.bot.musicbot.voice_client = ctx.voice_client
+
+    # Use your MusicBot instance to queue the song
+    await ctx.bot.musicbot.play(url)
+
+    # await ctx.send(f"Added to queue: {url}")
+
+@bot.command(help="Skips current song.")
+async def skip(ctx):
+    if not hasattr(bot, "musicbot"):
+        await ctx.send("Music bot is not initialized.")
+        return
+
+    bot.musicbot.skip()
+    await ctx.send("Skipped the current song.")
+
+@bot.command(aliases=["now"], help="Shows the current song playing.")
+async def nowplaying(ctx):
+    if not hasattr(bot, "musicbot"):
+        await ctx.send("Music bot is not initialized.")
+        return
+
+    current = bot.musicbot.get_current()
+    if current:
+        await ctx.send(f"Currently playing: {current}")
+    else:
+        await ctx.send("No song is currently playing.")
+
+@bot.command(aliases=["list"], help="Shows the titles in the queue.")
+async def queue(ctx):
+    if not hasattr(bot, "musicbot"):
+        await ctx.send("Music bot is not initialized.")
+        return
+
+    queue_items = bot.musicbot.get_queue()
+    if not queue_items:
+        await ctx.send("The queue is empty.")
+        return
+
+    # queue_items are tuples (url, title), so just get titles:
+    titles = [title for url, title in queue_items]
+
+    await ctx.send("Queue:\n" + "\n".join(f"- `{title}`" for title in titles))
+
+@bot.command(help="Stops music playback and clears the queue.")
+async def stop(ctx):
+    if hasattr(bot, "musicbot"):
+        bot.musicbot.stop()
+    else:
+        await ctx.send("Music bot is not initialized.")
+
+@bot.command(help="Pauses music.")
+async def pause(ctx):
+    if hasattr(bot, "musicbot"):
+        bot.musicbot.pause()
+        await ctx.send("Playback paused.")
+    else:
+        await ctx.send("Music bot is not initialized.")
+
+@bot.command(help="Resumes music.")
+async def resume(ctx):
+    if hasattr(bot, "musicbot"):
+        bot.musicbot.resume()
+        await ctx.send("Playback resumed.")
+    else:
+        await ctx.send("Music bot is not initialized.")
+
+
+# ================================
 
 bot.run(TOKEN)
  
