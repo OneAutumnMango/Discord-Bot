@@ -1,7 +1,7 @@
 import math
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from time import time, gmtime, strftime
 from datetime import datetime, timedelta, time as dt
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ import asyncio
 from rps import RPS
 from weather.weather import Weather
 from tides.tides import predict_tide, rebuild_model
-from astro import CelestialTracker
+from astro import CelestialTracker, SunArcTimer
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
@@ -20,6 +20,7 @@ SERVER = os.getenv('SERVER')
 IRELAND_TZ = pytz.timezone("Europe/Dublin")
 TIDE_RECIPIENTS = ['287363454665359371', '356458075302920202']
 TARGET_HOUR = 13
+TARGET_MINUTES = 0
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -84,7 +85,7 @@ def create_ws_embed():
         value=(
             f"`{h2:.2f}` | {timestamp(s2)} m\n"
             f"`{h1:.2f}` | {timestamp(s1)} m\n"
-            f"`{h:.2f}`  | {timestamp(s)}  m 🌅(sunset)"
+            f"`{h:.2f}`  | {timestamp(s)} m 🌅(sunset)"
         ),
         inline=False
     )
@@ -111,7 +112,8 @@ def create_ws_embed():
         inline=False
     )
 
-    # embed.set_footer(text="Data provided by OpenWeatherAPI & Tide Prediction Algorithms")
+    t, _ = SunArcTimer().minutes_per_hand_near_sunset()
+    embed.set_footer(text=f"{t:.1f} minutes per handwidth (7.149°)")
     # embed.set_thumbnail(url="https://i.imgur.com/3ZQ3ZzL.png")  # Example weather icon
 
     return embed
@@ -119,35 +121,57 @@ def create_ws_embed():
 
 
 # @asyncio.tasks.loop(hours=24)
-async def send_daily_forecast(test=None):
-    await bot.wait_until_ready()
+# async def send_daily_forecast(test=False):
+#     await bot.wait_until_ready()
 
-    while not bot.is_closed():
-        if not test:
-            now_utc = datetime.now(pytz.utc)
-            ireland_now = now_utc.astimezone(IRELAND_TZ)
-            target_time = IRELAND_TZ.localize(datetime.combine(ireland_now.date(), dt(hour=TARGET_HOUR)))
+#     while not bot.is_closed():
+#         # if test is False:
+#         now_utc = datetime.now(pytz.utc)
+#         ireland_now = now_utc.astimezone(IRELAND_TZ)
+#         target_time = IRELAND_TZ.localize(datetime.combine(ireland_now.date(), dt(hour=TARGET_HOUR)))
 
-            if ireland_now >= target_time:
-                target_time += timedelta(days=1)
+#         if ireland_now >= target_time:
+#             target_time += timedelta(days=1)
 
-            wait_seconds = (target_time - ireland_now).total_seconds()
+#         wait_seconds = (target_time - ireland_now).total_seconds()
 
-            await asyncio.sleep(wait_seconds)
+#         await asyncio.sleep(wait_seconds)
 
-        for ids in TIDE_RECIPIENTS:
-            user = await bot.fetch_user(ids)
+#         for id in TIDE_RECIPIENTS:
+#             user = await bot.fetch_user(id)
 
-            if test:
-                await user.send("Manual Daily Message Test")
+#             # if test:
+#             #     await user.send("Manual Daily Message Test")
 
-            try:
-                await user.send(embed=create_ws_embed())
+#             try:
+#                 await user.send(embed=create_ws_embed())
 
-            except Exception as e:
-                print(f"Error sending forecast: {e}")
+#             except Exception as e:
+#                 print(f"Error sending forecast: {e}")
         
-        if test: return
+#         # if test: return
+
+@tasks.loop(hours=24)
+async def send_daily_forecast():
+    for id in TIDE_RECIPIENTS:
+        user = await bot.fetch_user(id)
+        try:
+            await user.send(embed=create_ws_embed())
+        except Exception as e:
+            print(f"Error sending forecast: {e}")
+
+@send_daily_forecast.before_loop
+async def wait_until_1pm():
+    await bot.wait_until_ready()
+    now = datetime.now(IRELAND_TZ)
+    target_time = IRELAND_TZ.localize(datetime.combine(now.date(), dt(hour=TARGET_HOUR, minute=TARGET_MINUTES)))
+
+    if now >= target_time:
+        target_time += timedelta(days=1)
+
+    wait_seconds = (target_time - now).total_seconds()
+    # print(f"[Forecast Timer] Sleeping {wait_seconds/3600:.2f} hours until 1pm Ireland time")
+    await asyncio.sleep(wait_seconds)
 
 
 
@@ -158,7 +182,9 @@ async def on_ready():
         f'{bot.user} is connected to the following guild:\n'
         f'{guild.name} (id: {guild.id})'
     )
-    asyncio.create_task(send_daily_forecast())
+
+    if not send_daily_forecast.is_running():
+        send_daily_forecast.start()
 
 
 
@@ -305,6 +331,10 @@ async def horizon(ctx, height: float):
         f"At a height of `{height:.2f}m`, the horizon is approximately `{distance_km:.2f}km` away."
     )
 
+@bot.command(help="Time in minutes for the sun to travel one handwidth. (avg of last 2 handwidths)")
+async def handtime(ctx):
+    t, _ = SunArcTimer().minutes_per_hand_near_sunset()
+    await ctx.send(f"`{t:.1f}` minutes per handwidth (`7.149°`)")
 
 bot.run(TOKEN)
  
