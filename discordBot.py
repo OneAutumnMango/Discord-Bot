@@ -152,6 +152,9 @@ async def on_ready():
         f'{guild.name} (id: {guild.id})'
     )
 
+    activity = discord.Streaming(name="music 🎵 | -help", url="https://github.com/OneAutumnMango")
+    await bot.change_presence(status=discord.Status.online, activity=activity)
+
     if not send_daily_forecast.is_running():
         send_daily_forecast.start()
 
