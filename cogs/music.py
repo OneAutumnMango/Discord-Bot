@@ -56,9 +56,9 @@ class Music(commands.Cog):
                 ctx.bot.musicbot.voice_client = ctx.voice_client
 
         # Use your MusicBot instance to queue the song
-        await ctx.bot.musicbot.play(url)
+        title = await ctx.bot.musicbot.play(url)
 
-        # await ctx.send(f"Added to queue: {url}")
+        await ctx.send(f"Added to queue: {title}")
 
     @commands.command(help="Skips current song.")
     async def skip(self, ctx):
