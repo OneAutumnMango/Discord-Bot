@@ -27,11 +27,11 @@ class Music(commands.Cog):
 
         return channel
 
-    @commands.command(help="Joins Music Channel")
+    @commands.command(help="Joins your voice channel")
     async def join(self, ctx):
         await self._join_vc(ctx)
 
-    @commands.command(help="Leaves the current voice channel")
+    @commands.command(help="Stops playback and leaves the current voice channel")
     async def leave(self, ctx):
         if ctx.voice_client is None:
             await ctx.send("I'm not in a voice channel.")
@@ -42,7 +42,7 @@ class Music(commands.Cog):
         await ctx.voice_client.disconnect()
         await ctx.send("Disconnected from the voice channel.")
 
-    @commands.command(help="Play a song from a YouTube URL")
+    @commands.command(help="Play a song from a YouTube URL or search query")
     async def play(self, ctx, *, url: str):
         await self._join_vc(ctx)
 

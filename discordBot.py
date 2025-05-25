@@ -1,4 +1,3 @@
-import math
 import os
 import discord
 from discord.ext import commands, tasks
@@ -121,37 +120,6 @@ def create_ws_embed():
 
 
 
-# @asyncio.tasks.loop(hours=24)
-# async def send_daily_forecast(test=False):
-#     await bot.wait_until_ready()
-
-#     while not bot.is_closed():
-#         # if test is False:
-#         now_utc = datetime.now(pytz.utc)
-#         ireland_now = now_utc.astimezone(IRELAND_TZ)
-#         target_time = IRELAND_TZ.localize(datetime.combine(ireland_now.date(), dt(hour=TARGET_HOUR)))
-
-#         if ireland_now >= target_time:
-#             target_time += timedelta(days=1)
-
-#         wait_seconds = (target_time - ireland_now).total_seconds()
-
-#         await asyncio.sleep(wait_seconds)
-
-#         for id in TIDE_RECIPIENTS:
-#             user = await bot.fetch_user(id)
-
-#             # if test:
-#             #     await user.send("Manual Daily Message Test")
-
-#             try:
-#                 await user.send(embed=create_ws_embed())
-
-#             except Exception as e:
-#                 print(f"Error sending forecast: {e}")
-        
-#         # if test: return
-
 @tasks.loop(hours=24)
 async def send_daily_forecast():
     for id in TIDE_RECIPIENTS:
@@ -200,15 +168,6 @@ async def on_message(message):
         f.write(f"""{strftime('%d/%m/%Y %H:%M:%S', gmtime(time()))},"{str(message.channel)}","{message.author}",{repr(message.content).replace("'",'"')}\n""")
 
 
-    # react for fun
-    # if str(message.author) == 'Sekai#2422':
-    #   await message.add_reaction('👀')
-    # if str(message.author) == 'Mango#6990':
-    #   await message.add_reaction('❤️')
-    # if str(message.author) == 'Bread Accountant#4781':
-    #   await message.add_reaction('🤮')
-
-    # rps game
     msg = message.content
     ID = message.author.id
 
@@ -258,84 +217,6 @@ async def rps(ctx, arg: str = None):
     await ctx.send(f'Computer played {rpsNames[str(cin)]}\n{rpsOutKeys[str(pout)]}')
 
 
-# @bot.command(aliases=['s'], help="Shows today's sunset time in UTC.")
-# async def sunset(ctx):
-#     await ctx.send(f'Sunset at {timestamp(Weather().sunset())}')
-
-# @bot.command(aliases=['w'], help='Gets the current weather forecast.')
-# async def weather(ctx):
-#     forecast = Weather().weather_now()
-#     temp = forecast["temperature"]
-#     temp_margin = forecast["temp_margin"]
-#     feels_like = forecast["feels_like"]
-#     weather_desc = forecast["weather"]
-#     wind_speed = forecast["wind_speed"]
-#     cloud_cover = forecast["cloud_cover"]
-
-#     embed = create_embed(f"🌤️ Weather Forecast")
-#     embed.add_field(
-#         name=f"Dun Laoghaire",
-#         value=(
-#             f"Temperature: `{temp:.2f}±{temp_margin:.2f} °C` (feels like `{feels_like:.2f} °C`)\n"
-#             f"Weather: `{weather_desc}`\n"
-#             f"Wind Speed: `{wind_speed:.2f} m/s`\n"
-#             f"Cloud Cover: `{cloud_cover}%`"
-#         ),
-#         inline=False
-#     )
-#     await ctx.send(embed=embed)
-
-# @bot.command(aliases=['t'], help='Gets the current DL tide prediction.')
-# async def tide(ctx):
-#     now = datetime.now(pytz.utc)
-#     await ctx.send(f"`{predict_tide(now)[0]:.2f}m` @ {timestamp(now)}")
-
-# @bot.command(help="Gets the altitude and azimuth (angle off north) of the Moon.")
-# async def moon(ctx):
-#     alt, az, perc, rise_set_str = moon_info()
-#     # await ctx.send(f"Moon Alt: `{alt:.1f}°`, Az: `{az:.1f}°`, `{perc:.1f}%` of avg., {rise_set_str}")
-#     embed = create_embed(f"🌙 Moon Info")
-#     embed.add_field(
-#         name=f"Details",
-#         value=(
-#             f"Altitude: `{alt:.1f}°`\n"
-#             f"Azimuth: `{az:.1f}°`\n"
-#             f"%size of Avg.: `{perc:.1f}%`\n"
-#             f"{rise_set_str}"
-#         ),
-#         inline=False
-#     )
-#     await ctx.send(embed=embed)
-
-# @bot.command(help="Gets the altitude and azimuth (angle off north) of the Sun.")
-# async def sun(ctx):
-#     alt, az = CelestialTracker().sun_at()
-#     await ctx.send(f"Sun Alt: `{alt:.1f}°`, Az: `{az:.1f}°`")
-
-
-# @bot.command(help="Tide and weather around today's sunset.")
-# async def ws(ctx):
-#     await ctx.send(embed=create_ws_embed())
-
-# @bot.command(aliases=['hori', 'h'], help="Calculates the distance to the horizon from a given height.")
-# async def horizon(ctx, height: float):
-#     if height < 0:
-#         await ctx.send("Height must be non-negative.")
-#         return
-
-#     r = 6356752.3
-#     # distance_m = math.sqrt((r+height)**2 - r**2)
-#     distance_m = math.sqrt(2*r*height + height **2)
-#     distance_km = distance_m/1000
-
-#     await ctx.send(
-#         f"At a height of `{height:.2f}m`, the horizon is approximately `{distance_km:.2f}km` away."
-#     )
-
-# @bot.command(help="Time in minutes for the sun to travel one handwidth. (avg of last 2 handwidths)")
-# async def handtime(ctx):
-#     t, _ = SunArcTimer().minutes_per_hand_near_sunset()
-#     await ctx.send(f"`{t:.1f}` minutes per handwidth (`7.149°`)")
 
 
 async def main():
