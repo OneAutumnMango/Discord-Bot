@@ -157,9 +157,8 @@ async def on_ready():
     activity = discord.Game(name=f"music 🎵")
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
-    print("Known slash commands:", [c.name for c in bot.tree.get_commands()])
-    cmds = await bot.tree.sync(guild=discord.Object(id=guild.id))
-    print(f"commands added: {cmds}")
+    # await bot.tree.sync(guild=discord.Object(id=guild.id))
+    await bot.tree.sync()
 
     if not send_daily_forecast.is_running():
         send_daily_forecast.start()

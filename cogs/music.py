@@ -22,17 +22,17 @@ class Music(commands.Cog):
             return None
 
         channel = interaction.user.voice.channel
+        voice_client = interaction.guild.voice_client
 
-        if interaction.guild.voice_client is not None:
-            if interaction.guild.voice_client.channel == channel:
-                return channel
-            await interaction.guild.voice_client.move_to(channel)
-            # await interaction.response.send_message(f"Moved to {channel.name}")
+        if voice_client is not None:
+            if voice_client.channel != channel:
+                await voice_client.move_to(channel)
         else:
-            await channel.connect()
-            # await interaction.response.send_message(f"Joined {channel.name}")
+            voice_client = await channel.connect()
+        
+        return voice_client
 
-        return channel
+
 
     @app_commands.command(name="join", description="Joins your voice channel")
     async def join(self, interaction: discord.Interaction):
