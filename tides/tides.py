@@ -42,7 +42,7 @@ def download_tide_data(redownload=False):
     
     if response.status_code != 200:
         print(f"Failed to fetch data: {response.status_code}")
-        print("Attemping to reach local cache...")
+        print("Attempting to reach local cache...")
         if os.path.exists(DATA_FILE):
             print("Loading tide data from local cache...")
             df = pd.read_csv(DATA_FILE, parse_dates=['time'], index_col='time')
