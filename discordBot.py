@@ -177,7 +177,7 @@ async def on_message(message):
     if '😎' in msg:
         await message.add_reaction('😎')
 
-    if isinstance(message.channel, discord.DMChannel) and message.author.name == 'oneautumnmango':
+    if message.author.name == 'oneautumnmango':
         if msg.startswith('-rebuild'):
             await message.channel.send(f'Downloading new tide data and rebuilding model...')
             if rebuild_model():
@@ -187,6 +187,9 @@ async def on_message(message):
 
         if msg.startswith('-wstest'):
             await send_daily_forecast(test=True)
+
+        if msg.startswith('-musicinfo'):
+            await message.channel.send(f'{bot.musicbot.last_played=}')
 
     await bot.process_commands(message)
 
