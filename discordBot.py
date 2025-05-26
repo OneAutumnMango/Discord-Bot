@@ -20,10 +20,11 @@ IRELAND_TZ = pytz.timezone("Europe/Dublin")
 TIDE_RECIPIENTS = ['287363454665359371', '356458075302920202']
 TARGET_HOUR = 13
 TARGET_MINUTES = 0
+COMMAND_PREFIX='/'
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='-', intents=intents)
+bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
 rpsDict = {}
 rpsKeys = { 'r': 0, 'rock': 0,
@@ -152,7 +153,7 @@ async def on_ready():
         f'{guild.name} (id: {guild.id})'
     )
 
-    activity = discord.Streaming(name="music 🎵 | -help", url="https://github.com/OneAutumnMango")
+    activity = discord.Streaming(name=f"music 🎵 | {COMMAND_PREFIX}help", url="https://github.com/OneAutumnMango")
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
     if not send_daily_forecast.is_running():
@@ -228,6 +229,17 @@ async def rps(ctx, arg: str = None):
 async def main():
     await bot.load_extension('cogs.music')
     await bot.load_extension('cogs.astro')
+
+    # Sync slash commands with Discord
+    try:
+        # synced = await bot.tree.sync()
+        # print(f"Synced {len(synced)} slash commands.")
+        GUILD = discord.Object(id=SERVER)
+        synced = await bot.tree.sync(guild=GUILD)
+        print(f"Synced {len(synced)} commands to guild.")
+    except Exception as e:
+        print(f"Failed to sync slash commands: {e}")
+
     await bot.start(TOKEN)
 
 if __name__ == "__main__":
