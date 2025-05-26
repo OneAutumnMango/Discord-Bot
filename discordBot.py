@@ -196,32 +196,41 @@ async def on_message(message):
 
 
 
-@bot.command(help="Play Rock-Paper-Scissors with the bot.")
-async def rps(ctx, arg: str = None):
-    ID = ctx.author.id
+@bot.tree.command(name="rps", description="Play Rock-Paper-Scissors or view your score.")
+@discord.app_commands.describe(
+    move="Your move: rock (r), paper (p), scissors (s), or 'score' to view stats."
+)
+async def rps(interaction: discord.Interaction, move: str):
+    ID = interaction.user.id
 
     if ID not in rpsDict:
-        rps = RPS(str(ctx.author), ID, folder_path='rps logs')
+        rps = RPS(str(interaction.user), ID, folder_path='rps logs')
         rpsDict[ID] = rps
     else:
         rps = rpsDict[ID]
 
-    if arg is None:
-        await ctx.send("Please specify your move (`rock`/`r`, `paper`/`p`, `scissors`/`s`) or `score`.")
-        return
-
-    if arg in ['score', 'stats']:
+    move = move.lower()
+    if move in ['score', 'stats']:
         s, w, l, d = rps.get_score()
         winrate = f"{(w / float(l + w)) * 100:.2f}%" if l + w > 0 else "N/A"
-        await ctx.send(f"```Total Games Played: {w + l + d}, Winrate: {winrate}\nScore: {s}, Wins: {w}, Losses: {l}, Draws: {d}```")
+        await interaction.response.send_message(
+            f"```Total Games Played: {w + l + d}, Winrate: {winrate}\n"
+            f"Score: {s}, Wins: {w}, Losses: {l}, Draws: {d}```"
+        )
         return
 
-    if arg not in rpsKeys:
-        await ctx.send(f"Input '{arg}' not recognised. Please try again.")
+    if move not in rpsKeys:
+        await interaction.response.send_message(
+            f"Input '{move}' not recognised. Try rock (r), paper (p), scissors (s), or score.",
+            ephemeral=True
+        )
         return
 
-    cin, _, pout = rps.play(rpsKeys[arg])
-    await ctx.send(f'Computer played {rpsNames[str(cin)]}\n{rpsOutKeys[str(pout)]}')
+    cin, _, pout = rps.play(rpsKeys[move])
+    await interaction.response.send_message(
+        f'Computer played **{rpsNames[str(cin)]}**\n{rpsOutKeys[str(pout)]}'
+    )
+
 
 
 
