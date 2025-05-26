@@ -241,11 +241,11 @@ async def main():
 
     # Sync slash commands with Discord
     try:
-        # synced = await bot.tree.sync()
-        # print(f"Synced {len(synced)} slash commands.")
-        GUILD = discord.Object(id=SERVER)
-        synced = await bot.tree.sync(guild=GUILD)
-        print(f"Synced {len(synced)} commands to guild.")
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} slash commands.")
+        # GUILD = discord.Object(id=SERVER)
+        # synced = await bot.tree.sync(guild=GUILD)
+        # print(f"Synced {len(synced)} commands to guild.")
     except Exception as e:
         print(f"Failed to sync slash commands: {e}")
 
