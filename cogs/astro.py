@@ -1,6 +1,8 @@
 import math
 from datetime import datetime
 import pytz
+import discord
+from discord import app_commands
 from discord.ext import commands
 
 from weather.weather import Weather
@@ -10,17 +12,17 @@ from discordBot import timestamp, create_embed, create_ws_embed, moon_info
 
 
 class Astro(commands.Cog):
-    """Astronomy related commands."""
+    """Astronomy related slash commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(aliases=['s'], help="Shows today's sunset time in UTC.")
-    async def sunset(self, ctx):
-        await ctx.send(f'Sunset at {timestamp(Weather().sunset())}')
+    @app_commands.command(name="sunset", description="Show today's sunset time in UTC.")
+    async def sunset(self, interaction: discord.Interaction):
+        await interaction.response.send_message(f'Sunset at {timestamp(Weather().sunset())}')
 
-    @commands.command(aliases=['w'], help='Gets the current weather forecast.')
-    async def weather(self, ctx):
+    @app_commands.command(name="weather", description="Get the current weather forecast.")
+    async def weather(self, interaction: discord.Interaction):
         forecast = Weather().weather_now()
         temp = forecast["temperature"]
         temp_margin = forecast["temp_margin"]
@@ -40,15 +42,15 @@ class Astro(commands.Cog):
             ),
             inline=False
         )
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-    @commands.command(aliases=['t'], help='Gets the current DL tide prediction.')
-    async def tide(self, ctx):
+    @app_commands.command(name="tide", description="Get the current tide prediction for Dun Laoghaire.")
+    async def tide(self, interaction: discord.Interaction):
         now = datetime.now(pytz.utc)
-        await ctx.send(f"`{predict_tide(now)[0]:.2f}m` @ {timestamp(now)}")
+        await interaction.response.send_message(f"`{predict_tide(now)[0]:.2f}m` @ {timestamp(now)}")
 
-    @commands.command(help="Gets the altitude and azimuth (angle off north) of the Moon.")
-    async def moon(self, ctx):
+    @app_commands.command(name="moon", description="Get the current moon position and size.")
+    async def moon(self, interaction: discord.Interaction):
         alt, az, perc, rise_set_str = moon_info()
         embed = create_embed(f"🌙 Moon Info")
         embed.add_field(
@@ -61,35 +63,36 @@ class Astro(commands.Cog):
             ),
             inline=False
         )
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-    @commands.command(help="Gets the altitude and azimuth (angle off north) of the Sun.")
-    async def sun(self, ctx):
+    @app_commands.command(name="sun", description="Get the current sun position in the sky.")
+    async def sun(self, interaction: discord.Interaction):
         alt, az = CelestialTracker().sun_at()
-        await ctx.send(f"Sun Alt: `{alt:.1f}°`, Az: `{az:.1f}°`")
+        await interaction.response.send_message(f"Sun Alt: `{alt:.1f}°`, Az: `{az:.1f}°`")
 
-    @commands.command(help="Tide and weather around today's sunset.")
-    async def ws(self, ctx):
-        await ctx.send(embed=create_ws_embed())
+    @app_commands.command(name="ws", description="Show tide and weather near sunset.")
+    async def ws(self, interaction: discord.Interaction):
+        await interaction.response.send_message(embed=create_ws_embed())
 
-    @commands.command(aliases=['hori', 'h'], help="Calculates the distance to the horizon from a given height.")
-    async def horizon(self, ctx, height: float):
+    @app_commands.command(name="horizon", description="Calculate distance to the horizon from height.")
+    @app_commands.describe(height="Your eye level or viewpoint height in meters.")
+    async def horizon(self, interaction: discord.Interaction, height: float):
         if height < 0:
-            await ctx.send("Height must be non-negative.")
+            await interaction.response.send_message("Height must be non-negative.", ephemeral=True)
             return
 
         r = 6356752.3  # Earth radius in meters
-        distance_m = math.sqrt(2*r*height + height**2)
+        distance_m = math.sqrt(2 * r * height + height ** 2)
         distance_km = distance_m / 1000
 
-        await ctx.send(
+        await interaction.response.send_message(
             f"At a height of `{height:.2f}m`, the horizon is approximately `{distance_km:.2f}km` away."
         )
 
-    @commands.command(help="Time in minutes for the sun to travel one handwidth. (avg of last 2 handwidths)")
-    async def handtime(self, ctx):
+    @app_commands.command(name="handtime", description="Time for the sun to move one handwidth.")
+    async def handtime(self, interaction: discord.Interaction):
         t, _ = SunArcTimer().minutes_per_hand_near_sunset()
-        await ctx.send(f"`{t:.1f}` minutes per handwidth (`7.149°`)")
+        await interaction.response.send_message(f"`{t:.1f}` minutes per handwidth (`7.149°`)")
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(Astro(bot))
