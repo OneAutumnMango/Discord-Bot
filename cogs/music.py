@@ -27,10 +27,10 @@ class Music(commands.Cog):
             if interaction.guild.voice_client.channel == channel:
                 return channel
             await interaction.guild.voice_client.move_to(channel)
-            await interaction.response.send_message(f"Moved to {channel.name}")
+            # await interaction.response.send_message(f"Moved to {channel.name}")
         else:
             await channel.connect()
-            await interaction.response.send_message(f"Joined {channel.name}")
+            # await interaction.response.send_message(f"Joined {channel.name}")
 
         return channel
 
@@ -52,7 +52,7 @@ class Music(commands.Cog):
 
         vc = interaction.guild.voice_client
         if vc is None:
-            await interaction.response.send_message("I'm not in a voice channel.")
+            await interaction.response.send_message("I'm not in a voice channel.", ephemeral=True)
             return
 
         if hasattr(self.bot, "musicbot"):
@@ -73,6 +73,8 @@ class Music(commands.Cog):
         If the bot is not in a voice channel, it will automatically join the one you're in.
         The song will be added to the playback queue and start playing if nothing is currently playing.
         """
+
+        await interaction.response.defer()  # avoid timeout
 
         vc = await self._join_vc(interaction)
         if vc is None:
@@ -98,7 +100,7 @@ class Music(commands.Cog):
         """
 
         if not hasattr(self.bot, "musicbot"):
-            await interaction.response.send_message("Music bot is not initialized.")
+            await interaction.response.send_message("Music bot is not initialized.", ephemeral=True)
             return
         self.bot.musicbot.skip()
         await interaction.response.send_message("Skipped the current song.")
@@ -110,7 +112,7 @@ class Music(commands.Cog):
         """
 
         if not hasattr(self.bot, "musicbot"):
-            await interaction.response.send_message("Music bot is not initialized.")
+            await interaction.response.send_message("Music bot is not initialized.", ephemeral=True)
             return
 
         current = self.bot.musicbot.get_current()
@@ -126,7 +128,7 @@ class Music(commands.Cog):
         """
         
         if not hasattr(self.bot, "musicbot"):
-            await interaction.response.send_message("Music bot is not initialized.")
+            await interaction.response.send_message("Music bot is not initialized.", ephemeral=True)
             return
 
         queue_items = self.bot.musicbot.get_queue()
@@ -147,7 +149,7 @@ class Music(commands.Cog):
             self.bot.musicbot.stop()
             await interaction.response.send_message("Playback stopped and queue cleared.")
         else:
-            await interaction.response.send_message("Music bot is not initialized.")
+            await interaction.response.send_message("Music bot is not initialized.", ephemeral=True)
 
     @app_commands.command(name="pause", description="Pauses playback")
     async def pause(self, interaction: discord.Interaction):
@@ -161,7 +163,7 @@ class Music(commands.Cog):
             self.bot.musicbot.pause()
             await interaction.response.send_message("Playback paused.")
         else:
-            await interaction.response.send_message("Music bot is not initialized.")
+            await interaction.response.send_message("Music bot is not initialized.", ephemeral=True)
 
     @app_commands.command(name="resume", description="Resumes playback")
     async def resume(self, interaction: discord.Interaction):
@@ -173,18 +175,7 @@ class Music(commands.Cog):
             self.bot.musicbot.resume()
             await interaction.response.send_message("Playback resumed.")
         else:
-            await interaction.response.send_message("Music bot is not initialized.")
-
-    # async def cog_load(self):
-        # self.bot.tree.add_command(self.join)
-        # self.bot.tree.add_command(self.leave)
-        # self.bot.tree.add_command(self.play)
-        # self.bot.tree.add_command(self.skip)
-        # self.bot.tree.add_command(self.nowplaying)
-        # self.bot.tree.add_command(self.queue)
-        # self.bot.tree.add_command(self.stop)
-        # self.bot.tree.add_command(self.pause)
-        # self.bot.tree.add_command(self.resume)
+            await interaction.response.send_message("Music bot is not initialized.", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Music(bot))

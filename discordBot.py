@@ -113,8 +113,9 @@ def create_ws_embed():
         inline=False
     )
 
-    t, _ = SunArcTimer().minutes_per_hand_near_sunset()
-    embed.set_footer(text=f"{t:.1f} minutes per handwidth (7.149°)")
+    if s > datetime.now(pytz.utc):
+        t, _ = SunArcTimer().minutes_per_hand_near_sunset()
+        embed.set_footer(text=f"{t:.1f} minutes per handwidth (7.149°)")
     # embed.set_thumbnail(url="https://i.imgur.com/3ZQ3ZzL.png")  # Example weather icon
 
     return embed
@@ -153,8 +154,12 @@ async def on_ready():
         f'{guild.name} (id: {guild.id})'
     )
 
-    activity = discord.Streaming(name=f"music 🎵 | {COMMAND_PREFIX}help", url="https://github.com/OneAutumnMango")
+    activity = discord.Game(name=f"music 🎵")
     await bot.change_presence(status=discord.Status.online, activity=activity)
+
+    print("Known slash commands:", [c.name for c in bot.tree.get_commands()])
+    cmds = await bot.tree.sync(guild=discord.Object(id=guild.id))
+    print(f"commands added: {cmds}")
 
     if not send_daily_forecast.is_running():
         send_daily_forecast.start()
@@ -238,16 +243,6 @@ async def rps(interaction: discord.Interaction, move: str):
 async def main():
     await bot.load_extension('cogs.music')
     await bot.load_extension('cogs.astro')
-
-    # Sync slash commands with Discord
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands.")
-        # GUILD = discord.Object(id=SERVER)
-        # synced = await bot.tree.sync(guild=GUILD)
-        # print(f"Synced {len(synced)} commands to guild.")
-    except Exception as e:
-        print(f"Failed to sync slash commands: {e}")
 
     await bot.start(TOKEN)
 

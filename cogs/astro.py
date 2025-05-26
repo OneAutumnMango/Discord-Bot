@@ -72,7 +72,8 @@ class Astro(commands.Cog):
 
     @app_commands.command(name="ws", description="Show tide and weather near sunset.")
     async def ws(self, interaction: discord.Interaction):
-        await interaction.response.send_message(embed=create_ws_embed())
+        await interaction.response.defer()  # avoid timeout
+        await interaction.followup.send(embed=create_ws_embed())
 
     @app_commands.command(name="horizon", description="Calculate distance to the horizon from height.")
     @app_commands.describe(height="Your eye level or viewpoint height in meters.")
