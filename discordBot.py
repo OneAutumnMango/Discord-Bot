@@ -154,7 +154,7 @@ async def on_ready():
         f'{guild.name} (id: {guild.id})'
     )
 
-    activity = discord.Game(name=f"music 🎵")
+    activity = discord.Game(name=f"music 🎵 | {COMMAND_PREFIX}help")
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
     # await bot.tree.sync(guild=discord.Object(id=guild.id))
@@ -235,7 +235,14 @@ async def rps(interaction: discord.Interaction, move: str):
         f'Computer played **{rpsNames[str(cin)]}**\n{rpsOutKeys[str(pout)]}'
     )
 
+@bot.tree.command(name="help", description="List all available commands")
+async def help(interaction: discord.Interaction):
+    embed = discord.Embed(title="Available Commands", color=discord.Color.blurple())
 
+    for cmd in bot.tree.get_commands():
+        embed.add_field(name=f"{COMMAND_PREFIX}{cmd.name}", value=cmd.description or "No description", inline=False)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 
