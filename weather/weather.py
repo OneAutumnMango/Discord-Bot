@@ -42,6 +42,11 @@ class Weather:
         with open(self._weather_cache_file, "w") as f:
             json.dump(self._recent_weather, f)
 
+    def with_lat_lon(self, lat, lon):  # for init method chaining
+        self.lat = lat
+        self.lon = lon
+        return self
+
     def _grab_forecast(self):
         params = {
             "lat": self.lat,
