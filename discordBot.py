@@ -58,7 +58,9 @@ def moon_info(dt=None):
     _, perc = ct.moon_angular_diameter_pct(dt)
     rise, set = ct.moon_rise_set()
     rise_set_str = f'Rises @ {timestamp(rise)}' if alt <= 0 else f'Sets @ {timestamp(set)}'
-    return alt, az, perc, rise_set_str
+    phase, illum = ct.moon_phase(dt)
+    phase_name = ct.moon_phase_name(phase)
+    return alt, az, perc, rise_set_str, phase, phase_name, illum
 
 def create_ws_embed():
     w = Weather()
@@ -77,7 +79,7 @@ def create_ws_embed():
     wind_speed = forecast["wind_speed"]
     cloud_cover = forecast["cloud_cover"]
 
-    alt, az, perc, rise_set_str = moon_info(s)
+    alt, az, perc, rise_set_str, phase, phase_name, illum = moon_info(s)
 
     embed = create_embed(title="🌅 Evening Tide, Weather & Moon Forecast")
 
@@ -103,17 +105,19 @@ def create_ws_embed():
     )
 
     embed.add_field(
-        name=f"🌙 Moon Info @ {timestamp(s)}",
+        name=f"🌙 Moon Info @ {timestamp(s)} (sunset)",
         value=(
             f"Altitude: `{alt:.1f}°`\n"
             f"Azimuth: `{az:.1f}°`\n"
             f"%size of Avg.: `{perc:.1f}%`\n"
-            f"{rise_set_str}"
+            f"{rise_set_str}\n"
+            f"Phase: {phase_name} (`{phase:.1f}°`)\n"
+            f"Illumination `{illum*100:.1f}%`"
         ),
         inline=False
     )
 
-    if s > datetime.now(pytz.utc):
+    if s > datetime.now(pytz.utc) + timedelta(hours=2):
         t, _ = SunArcTimer().minutes_per_hand_near_sunset()
         embed.set_footer(text=f"{t:.1f} minutes per handwidth (7.149°)")
     # embed.set_thumbnail(url="https://i.imgur.com/3ZQ3ZzL.png")  # Example weather icon

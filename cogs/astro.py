@@ -51,7 +51,7 @@ class Astro(commands.Cog):
 
     @app_commands.command(name="moon", description="Get the current moon position and size.")
     async def moon(self, interaction: discord.Interaction):
-        alt, az, perc, rise_set_str = moon_info()
+        alt, az, perc, rise_set_str, phase, phase_name, illum = moon_info()
         embed = create_embed(f"🌙 Moon Info")
         embed.add_field(
             name=f"Details",
@@ -59,7 +59,9 @@ class Astro(commands.Cog):
                 f"Altitude: `{alt:.1f}°`\n"
                 f"Azimuth: `{az:.1f}°`\n"
                 f"%size of Avg.: `{perc:.1f}%`\n"
-                f"{rise_set_str}"
+                f"{rise_set_str}\n"
+                f"Phase: {phase_name} (`{phase:.1f}°`)\n"
+                f"Illumination `{illum*100:.1f}%`"
             ),
             inline=False
         )
@@ -70,7 +72,7 @@ class Astro(commands.Cog):
         alt, az = CelestialTracker().sun_at()
         await interaction.response.send_message(f"Sun Alt: `{alt:.1f}°`, Az: `{az:.1f}°`")
 
-    @app_commands.command(name="ws", description="Show tide and weather near sunset.")
+    @app_commands.command(name="ws", description="Show tide, weather and moon near sunset.")
     async def ws(self, interaction: discord.Interaction):
         await interaction.response.defer()  # avoid timeout
         await interaction.followup.send(embed=create_ws_embed())

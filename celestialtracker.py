@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from skyfield.api import load, wgs84
 from skyfield import almanac
-from math import degrees, atan2
+from math import cos, degrees, atan2
 
 class CelestialTracker:
     def __init__(self, latitude: float = 53.29395, longitude: float = -6.13586, elevation_m: float = 0):
@@ -92,6 +92,42 @@ class CelestialTracker:
                 break
 
         return rise_time, set_time
+    
+    def moon_phase(self, dt: datetime = None):
+        """
+        Returns the moon phase angle in degrees at a specific datetime.
+        0° = New Moon, 90° = First Quarter, 180° = Full Moon, 270° = Last Quarter
+        """
+        if dt is None:
+            dt = datetime.now(timezone.utc)
+        elif dt.tzinfo is None:
+            raise ValueError("Datetime must be timezone-aware (e.g., in UTC)")
+
+        t = self.ts.from_datetime(dt)
+        phase_angle = almanac.moon_phase(self.eph, t)
+
+        illumination = 0.5 * (1 - cos(phase_angle.radians))
+
+        return phase_angle.degrees, illumination
+
+    def moon_phase_name(self, phase_angle: float) -> str:
+        """Returns a rough moon phase name based on angle. (might be generous with the full moon status)"""
+        if phase_angle < 10 or phase_angle >= 350:
+            return "New Moon"
+        elif phase_angle < 85:
+            return "Waxing Crescent"
+        elif phase_angle < 95:
+            return "First Quarter"
+        elif phase_angle < 175:
+            return "Waxing Gibbous"
+        elif phase_angle < 185:
+            return "Full Moon"
+        elif phase_angle < 265:
+            return "Waning Gibbous"
+        elif phase_angle < 275:
+            return "Last Quarter"
+        else:
+            return "Waning Crescent"
 
 class SunArcTimer():
     def __init__(self, latitude: float = 53.29395, longitude: float = -6.13586, arc_deg: float = 7.149):
@@ -205,10 +241,16 @@ class SunArcTimer():
         return None, start_alt  # Didn't drop arc_deg in max_minutes
 
 if __name__ == "__main__":
-    # ct = CelestialTracker()
+    ct = CelestialTracker()
     # print(ct.moon_angular_diameter_pct())
     # print(ct.moon_rise_set())
 
-    sat = SunArcTimer()
-    print(sat.time_until_sun_drops_arc())
-    print(sat.minutes_per_hand_near_sunset())
+    # sat = SunArcTimer()
+    # print(sat.time_until_sun_drops_arc())
+    # print(sat.minutes_per_hand_near_sunset())
+
+    p, i = ct.moon_phase()
+    print(p, i)
+
+    print(ct.moon_phase_name(p))
+    
